@@ -1,0 +1,17 @@
+# Dependency folders (very heavy, don't upload)
+node_modules/
+
+# Environment variables (SENSITIVE - contains your DB URI and JWT Secret)
+.env
+
+# Logs
+npm-debug.log*
+yarn-error.log*
+
+# Operating system files
+.DS_Store
+Thumbs.db
+
+# Build folders (if you use them)
+dist/
+build/
