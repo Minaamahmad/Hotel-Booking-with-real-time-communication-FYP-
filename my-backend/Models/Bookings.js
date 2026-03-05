@@ -14,6 +14,11 @@ const bookingSchema = new mongoose.Schema(
       ref: "Room",
       required: true,
     },
+    hotel_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Hotel",
+      required: true,
+    },
 
     check_in: {
       type: Date,
@@ -29,6 +34,10 @@ const bookingSchema = new mongoose.Schema(
       type: String,
       enum: ["Pending", "Confirmed"],
       default: "Pending",
+    },
+    total_price: {
+      type: Number,
+      required: true,
     },
   },
   { timestamps: true }
