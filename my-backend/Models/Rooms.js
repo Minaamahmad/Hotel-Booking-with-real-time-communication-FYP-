@@ -26,6 +26,11 @@ const roomSchema = new mongoose.Schema(
       required: true,
       min: 0,
     },
+
+    images: {
+      type: [String],
+      default: [],
+    },
   },
   { timestamps: true }
 );

@@ -128,3 +128,46 @@ export const deleteRoom = async (req, res) => {
     res.status(500).json({ message: "Failed to delete Room", error });
   }
 };
+
+// Upload room images
+export const uploadRoomImages = async (req, res) => {
+  try {
+    const room_id = req.params.roomId;
+    const user_id = req.user._id;
+
+    const room = await Room.findById(room_id);
+    if (!room) {
+      return res.status(404).json({ message: "Room not found" });
+    }
+
+    // Verify user owns the hotel
+    const hotel = await Hotel.findById(room.hotel_id);
+    if (hotel.owner_id.toString() !== user_id.toString()) {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ message: "No files uploaded" });
+    }
+
+    // Validate files
+    const maxFileSize = 5 * 1024 * 1024; // 5MB
+    for (const file of req.files) {
+      if (file.size > maxFileSize) {
+        return res.status(400).json({ 
+          message: `File ${file.originalname} is too large. Maximum size is 5MB` 
+        });
+      }
+    }
+
+    const imagePaths = req.files.map((file) => `/uploads/rooms/${file.filename}`);
+    room.images = [...room.images, ...imagePaths];
+    await room.save();
+    res.status(200).json({
+      message: "Images uploaded successfully",
+      images: room.images,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Failed to upload images", error });
+  }
+};

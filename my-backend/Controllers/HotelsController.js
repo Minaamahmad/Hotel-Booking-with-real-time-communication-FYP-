@@ -7,11 +7,17 @@ export const createHotel = async (req, res) => {
     const { name, description, location } = req.body;
     const owner_id = req.user._id;
 
+    // Validation
+    if (!name || !location) {
+      return res.status(400).json({ message: "Name and location are required" });
+    }
+
     const newHotel = new Hotels({
       owner_id,
       name,
       description,
       location,
+      images: [],
     });
 
     await newHotel.save();
@@ -92,4 +98,41 @@ export const deleteHotel = async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: "Failed to delete hotel", error });
   }
-}
+};
+
+// Upload hotel images
+export const uploadHotelImages = async (req, res) => {
+  try {
+    const hotel = await Hotels.findById(req.params.id);
+    if (!hotel) {
+      return res.status(404).json({ message: "Hotel not found" });
+    }
+    if (hotel.owner_id.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ message: "No files uploaded" });
+    }
+
+    // Validate files
+    const maxFileSize = 5 * 1024 * 1024; // 5MB
+    for (const file of req.files) {
+      if (file.size > maxFileSize) {
+        return res.status(400).json({ 
+          message: `File ${file.originalname} is too large. Maximum size is 5MB` 
+        });
+      }
+    }
+
+    const imagePaths = req.files.map((file) => `/uploads/hotels/${file.filename}`);
+    hotel.images = [...hotel.images, ...imagePaths];
+    await hotel.save();
+    res.status(200).json({
+      message: "Images uploaded successfully",
+      images: hotel.images,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Failed to upload images", error });
+  }
+};

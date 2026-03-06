@@ -2,35 +2,125 @@ import Rooms from "../Models/Rooms.js";
 import Bookings from "../Models/Bookings.js";
 import Hotels from "../Models/Hotels.js";
 
-const createBooking =async (req,res) => {
+export const createBooking = async (req, res) => {
+  try {
+    const { room_id, check_in, check_out } = req.body;
+    const user_id = req.user._id;
 
-    try{
-    const {room_id,check_In,check_out}=req.body;
-    const user_id=req.user._id
-const room= await Rooms.findbyid({room_id})
-if(!room) return res.status(404).json({ message: "Room not found" });
+    // Validate dates
+    if (!check_in || !check_out) {
+      return res.status(400).json({ message: "Check-in and check-out dates are required" });
+    }
 
-const nights = Math.ceil((new Date(check_out) - new Date(check_in)) / (1000 * 60 * 60 * 24));
-    if (nights <= 0) return res.status(400).json({ message: "Invalid dates" });
+    const room = await Rooms.findById(room_id).populate("hotel_id");
+    if (!room) {
+      return res.status(404).json({ message: "Room not found" });
+    }
 
-    // 3. Final Price Calculation
+    // Check if room has availability
+    if (room.total_stock <= 0) {
+      return res.status(400).json({ message: "Room is not available" });
+    }
+
+    const nights = Math.ceil(
+      (new Date(check_out) - new Date(check_in)) / (1000 * 60 * 60 * 24)
+    );
+    if (nights <= 0) {
+      return res.status(400).json({ message: "Invalid dates" });
+    }
+
+    // Calculate total price
     const total_price = nights * room.price_per_night;
 
-    const newBooking= new Bookings({
-     user_id,
-     room_id,
-     hotel_id:room.hotel._id,
-     check_In,
-     check_out,
-     total_price,
-     status:"pending",
-    })
+    const newBooking = new Bookings({
+      user_id,
+      room_id,
+      hotel_id: room.hotel_id,
+      check_in,
+      check_out,
+      total_price,
+      status: "Pending",
+    });
 
-await newBooking.save()
-res.status(201).json(newBooking);
+    await newBooking.save();
+
+    // Decrease room stock
+    room.total_stock -= 1;
+    await room.save();
+
+    res.status(201).json(newBooking);
   } catch (error) {
     res.status(500).json({ message: "Booking error", error });
   }
-
 }
 
+export const getBookingsByUser = async (req, res) => {
+  try {
+    const user_id = req.user._id;
+    const bookings = await Bookings.find({ user_id })
+      .populate("room_id")
+      .populate("hotel_id");
+    res.status(200).json(bookings);
+  } catch (error) {
+    res.status(500).json({ message: "Failed to retrieve bookings", error });
+  }
+};
+
+export const getBookingsByHotel = async (req, res) => {
+  try {
+    const hotel_id = req.params.hotelId;
+    const bookings = await Bookings.find({ hotel_id })
+      .populate("room_id")
+      .populate("user_id", "name email");
+    res.status(200).json(bookings);
+  } catch (error) {
+    res.status(500).json({ message: "Failed to retrieve bookings", error });
+  }
+};
+
+export const approveBooking = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const booking = await Bookings.findById(id);
+    if (!booking) {
+      return res.status(404).json({ message: "Booking not found!" });
+    }
+
+    booking.status = "Confirmed";
+    await booking.save();
+
+    res.status(200).json({
+      message: `Booking #${id} has been confirmed.`,
+      updatedBooking: booking,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error });
+  }
+};
+
+export const cancelBooking = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const booking = await Bookings.findById(id);
+    if (!booking) {
+      return res.status(404).json({ message: "Booking not found!" });
+    }
+
+    // Return room stock if booking is cancelled
+    if (booking.status === "Pending" || booking.status === "Confirmed") {
+      const room = await Rooms.findById(booking.room_id);
+      if (room) {
+        room.total_stock += 1;
+        await room.save();
+      }
+    }
+
+    await Bookings.findByIdAndDelete(id);
+
+    res.status(200).json({
+      message: `Booking #${id} has been cancelled and room stock restored.`,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error });
+  }
+};
