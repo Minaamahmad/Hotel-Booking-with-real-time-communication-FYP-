@@ -12,9 +12,12 @@ import bookingrouter from "./routes/BookingRoute.js";
 import "./config/passport.js";
 import cookieParser from "cookie-parser";
 import googlAuthrouter from "./Controllers/googleauth.js"
+import { http } from "http";
+import io from "./Controllers/MessagesController.js"
 const app = express();
 
-// Get current directory
+const server=http.createServer(app)
+const socket =io(server)
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
