@@ -1,5 +1,7 @@
 import { Server } from "socket.io";
 import cors from cors
+import Message from "../Models/Messages.js";
+
 
 
 const io = new Server(httpserver,{
@@ -11,5 +13,8 @@ io.on("connection",(socket)=>{
     console.log("Comms are on ",socket.id)
 })
 httpserver.listen(3000)
+
+
+const messages= new
 
 module.exports=io
