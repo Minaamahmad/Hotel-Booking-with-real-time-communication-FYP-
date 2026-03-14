@@ -15,6 +15,8 @@ io.on("connection",(socket)=>{
 httpserver.listen(3000)
 
 
-const messages= new
+const messages= new Message({
+    
+})
 
 module.exports=io
