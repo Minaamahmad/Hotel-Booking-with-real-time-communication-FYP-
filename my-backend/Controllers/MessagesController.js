@@ -16,7 +16,11 @@ httpserver.listen(3000)
 
 
 const messages= new Message({
-    
+    sender_id,
+    receiver_id,
+    hotel_id,
+    content,
+    timestamps
 })
-
+await messages.save()
 module.exports=io
