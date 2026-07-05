@@ -33,9 +33,12 @@ const protect = async (req, res, next) => {
   }
 };
 
+const normalizeRole = (role) => String(role || '').toLowerCase();
+
 export const authorizeRoles = (...roles) => {
+  const normalizedRoles = roles.map(normalizeRole);
   return (req, res, next) => {
-    if (!roles.includes(req.user.role)) {
+    if (!normalizedRoles.includes(normalizeRole(req.user.role))) {
       return res.status(403).json({ message: 'Forbidden' });
     }
     next();

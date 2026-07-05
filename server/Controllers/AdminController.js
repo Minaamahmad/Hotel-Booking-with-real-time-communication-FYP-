@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import User from "../Models/Users.js";
 
 export const getAllUsers = async (req, res) => {
@@ -9,12 +10,14 @@ export const getAllUsers = async (req, res) => {
   }
 };
 
+const isAdminRole = (role) => String(role || '').toLowerCase() === 'admin';
+
 export const banUser = async (req, res) => {
   try {
     const { id } = req.params;
 
-    if (!id) {
-      return res.status(400).json({ message: 'User id is required' });
+    if (!id || !mongoose.isValidObjectId(id)) {
+      return res.status(400).json({ message: 'Valid user id is required' });
     }
 
     if (req.user._id.toString() === id) {
@@ -26,14 +29,17 @@ export const banUser = async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    if (user.role === 'Admin') {
+    if (isAdminRole(user.role)) {
       return res.status(403).json({ message: 'Cannot ban another admin' });
     }
 
-    user.banned = true;
-    await user.save();
+    const updatedUser = await User.findByIdAndUpdate(
+      id,
+      { banned: true },
+      { new: true, runValidators: true }
+    );
 
-    res.json({ message: 'User banned successfully', user });
+    res.json({ message: 'User banned successfully', user: updatedUser });
   } catch (error) {
     res.status(500).json({ message: 'Failed to ban user', error: error.message });
   }
@@ -43,19 +49,21 @@ export const unbanUser = async (req, res) => {
   try {
     const { id } = req.params;
 
-    if (!id) {
-      return res.status(400).json({ message: 'User id is required' });
+    if (!id || !mongoose.isValidObjectId(id)) {
+      return res.status(400).json({ message: 'Valid user id is required' });
     }
 
-    const user = await User.findById(id);
-    if (!user) {
+    const updatedUser = await User.findByIdAndUpdate(
+      id,
+      { banned: false },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedUser) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    user.banned = false;
-    await user.save();
-
-    res.json({ message: 'User unbanned successfully', user });
+    res.json({ message: 'User unbanned successfully', user: updatedUser });
   } catch (error) {
     res.status(500).json({ message: 'Failed to unban user', error: error.message });
   }

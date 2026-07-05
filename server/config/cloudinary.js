@@ -17,10 +17,10 @@ cloudinary.config({
 // Test Cloudinary connection
 cloudinary.api.ping()
   .then(() => {
-    console.log('C  connection successful');
+    console.log('Cloud storage  connection successful');
   })
   .catch((error) => {
-    console.error('C  connection failed:', error);
+    console.error('Cloud storage  connection failed:', error);
   });
 
 // Create Cloudinary storage instance
