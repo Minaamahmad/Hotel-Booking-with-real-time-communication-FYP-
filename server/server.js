@@ -30,7 +30,7 @@ dotenv.config();
 
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || "http://localhost:5173",
+    origin: process.env.FRONTEND_URL || ["http://localhost:3000", "https://prime-booking-ten.vercel.app"],
     credentials: true,
   })
 );
@@ -94,7 +94,7 @@ app.uploadRoom = roomUpload;
 
 const io = new Server(server, {
   cors: {
-    origin: process.env.FRONTEND_URL || "http://localhost:5173",
+    origin: process.env.FRONTEND_URL || ["http://localhost:3000", "https://prime-booking-ten.vercel.app"],
     credentials: true,
   },
 });
